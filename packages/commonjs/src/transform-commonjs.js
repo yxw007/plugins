@@ -369,9 +369,10 @@ export default async function transformCommonjs(
             if (scope.contains(flattened.name)) return;
 
             if (
-              flattened.keypath === 'module.exports' ||
-              flattened.keypath === 'module' ||
-              flattened.keypath === 'exports'
+              !isEsModule &&
+              (flattened.keypath === 'module.exports' ||
+                flattened.keypath === 'module' ||
+                flattened.keypath === 'exports')
             ) {
               magicString.overwrite(node.start, node.end, `'object'`, {
                 storeName: false
