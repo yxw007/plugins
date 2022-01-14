@@ -17,21 +17,15 @@ export function getUnknownRequireProxy(id, requireReturnsDefault) {
   return `import * as ${name} from ${JSON.stringify(id)}; ${exported}`;
 }
 
-export async function getStaticRequireProxy(
-  id,
-  requireReturnsDefault,
-  esModulesWithDefaultExport,
-  esModulesWithNamedExports,
-  loadModule
-) {
+export async function getStaticRequireProxy(id, requireReturnsDefault, loadModule) {
   const name = getName(id);
   const {
     meta: { commonjs: commonjsMeta }
   } = await loadModule({ id });
-  if (commonjsMeta && commonjsMeta.isCommonJS) {
-    return `export { __moduleExports as default } from ${JSON.stringify(id)};`;
-  } else if (!commonjsMeta) {
+  if (!commonjsMeta) {
     return getUnknownRequireProxy(id, requireReturnsDefault);
+  } else if (commonjsMeta.isCommonJS) {
+    return `export { __moduleExports as default } from ${JSON.stringify(id)};`;
   } else if (!requireReturnsDefault) {
     return `import { getAugmentedNamespace } from "${HELPERS_ID}"; import * as ${name} from ${JSON.stringify(
       id
@@ -39,8 +33,8 @@ export async function getStaticRequireProxy(
   } else if (
     requireReturnsDefault !== true &&
     (requireReturnsDefault === 'namespace' ||
-      !esModulesWithDefaultExport.has(id) ||
-      (requireReturnsDefault === 'auto' && esModulesWithNamedExports.has(id)))
+      !commonjsMeta.hasDefaultExport ||
+      (requireReturnsDefault === 'auto' && commonjsMeta.hasNamedExports))
   ) {
     return `import * as ${name} from ${JSON.stringify(id)}; export default ${name};`;
   }
